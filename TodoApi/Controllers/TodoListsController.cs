@@ -1,92 +1,86 @@
+using Hangfire;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using TodoApi.BusinessLogic.Interfaces;
+using TodoApi.DataAccess;
 using TodoApi.Dtos;
 using TodoApi.Models;
 
+
 namespace TodoApi.Controllers
 {
+    /// <summary>
+    /// Controlador para manejar las Listas de tareas (TodoLists).
+    /// </summary>
     [Route("api/todolists")]
     [ApiController]
     public class TodoListsController : ControllerBase
     {
-        private readonly TodoContext _context;
+        private readonly ITodoListsBL _todoListsBl;
 
-        public TodoListsController(TodoContext context)
+        public TodoListsController(ITodoListsBL todoListsBl)
         {
-            _context = context;
+            _todoListsBl = todoListsBl;
         }
 
-        // GET: api/todolists
+        /// <summary>
+        /// Devuelve una lista de todas las listas de tareas (TodoLists).
+        /// </summary>
+        /// <returns>Una List de TodoList.</returns>
         [HttpGet]
         public async Task<ActionResult<IList<TodoList>>> GetTodoLists()
         {
-            return Ok(await _context.TodoList.ToListAsync());
+            return Ok(await _todoListsBl.GetTodoLists());
         }
 
-        // GET: api/todolists/5
+        /// <summary>
+        /// Devuelve una lista de tareas (TodoList) por su ID.
+        /// </summary>
+        /// <param name="id">ID del Todo List</param>
+        /// <returns>La Todo List solicitada.</returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<TodoList>> GetTodoList(long id)
         {
-            var todoList = await _context.TodoList.FindAsync(id);
-
-            if (todoList == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(todoList);
+            return Ok(await _todoListsBl.GetTodoList(id));
         }
 
-        // PUT: api/todolists/5
-        // To protect from over-posting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Actualiza una lista de tareas (TodoList) existente.
+        /// </summary>
+        /// <param name="id">ID de la Todo List.</param>
+        /// <param name="payload">La data para actualizar la Todo List</param>
+        /// <returns> Los Todo List con sus nuevos datos. </returns>
         [HttpPut("{id}")]
         public async Task<ActionResult> PutTodoList(long id, UpdateTodoList payload)
         {
-            var todoList = await _context.TodoList.FindAsync(id);
-
-            if (todoList == null)
-            {
-                return NotFound();
-            }
-
-            todoList.Name = payload.Name;
-            await _context.SaveChangesAsync();
-
-            return Ok(todoList);
+            return Ok(await _todoListsBl.UpdateTodoList(id, payload));
         }
 
-        // POST: api/todolists
-        // To protect from over-posting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Crea una nueva lista de tareas (TodoList).
+        /// </summary>
+        /// <param name="payload">La data para crear la Todo List</param>
+        /// <returns> Los Todo List creada con sus datos. </returns>
         [HttpPost]
         public async Task<ActionResult<TodoList>> PostTodoList(CreateTodoList payload)
         {
-            var todoList = new TodoList { Name = payload.Name };
-
-            _context.TodoList.Add(todoList);
-            await _context.SaveChangesAsync();
+            var todoList = await _todoListsBl.CreateTodoList(payload);
 
             return CreatedAtAction("GetTodoList", new { id = todoList.Id }, todoList);
         }
 
-        // DELETE: api/todolists/5
+        /// <summary>
+        /// Elimina una lista de tareas (TodoList) por su ID.
+        /// </summary>
+        /// <param name="id"> El ID de la Todo list a eliminar.</param>
+        /// <returns> No devuelve nada.</returns>
         [HttpDelete("{id}")]
         public async Task<ActionResult> DeleteTodoList(long id)
         {
-            var todoList = await _context.TodoList.FindAsync(id);
-            if (todoList == null)
-            {
-                return NotFound();
-            }
-
-            _context.TodoList.Remove(todoList);
-            await _context.SaveChangesAsync();
+            await _todoListsBl.DeleteTodoList(id);
 
             return NoContent();
         }
 
-        private bool TodoListExists(long id)
-        {
-            return (_context.TodoList?.Any(e => e.Id == id)).GetValueOrDefault();
-        }
+
     }
 }
