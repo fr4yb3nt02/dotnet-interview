@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.SignalR;
 using TodoApi.Dtos;
+using TodoApi.Hubs;
 using TodoApi.Models;
 
 namespace TodoApi.BusinessLogic.Interfaces
@@ -11,5 +13,6 @@ namespace TodoApi.BusinessLogic.Interfaces
         public Task<TodoItem> CreateTodoItem(long todoListId, CreateTodoitem payload);
         public Task<bool> DeleteTodoItem(long todoListId, long id);
         public Task CompleteTodoItem(long todoListId, long id);
+        Task CompleteAllItems(long todoListId);
     }
 }

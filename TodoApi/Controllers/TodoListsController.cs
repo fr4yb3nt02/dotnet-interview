@@ -16,10 +16,12 @@ namespace TodoApi.Controllers
     public class TodoListsController : ControllerBase
     {
         private readonly ITodoListsBL _todoListsBl;
+        private readonly ITodoItemsBL _todoItemsBl;
 
-        public TodoListsController(ITodoListsBL todoListsBl)
+        public TodoListsController(ITodoListsBL todoListsBl, ITodoItemsBL todoItemsBl)
         {
             _todoListsBl = todoListsBl;
+            _todoItemsBl = todoItemsBl;
         }
 
         /// <summary>
@@ -79,6 +81,18 @@ namespace TodoApi.Controllers
             await _todoListsBl.DeleteTodoList(id);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Crea una tarea para completar todos los items de una Todo List.
+        /// </summary>
+        /// <param name="id"> El ID de la todo list de la cual se completaran sus items.</param>
+        /// <returns> No devuelve nada.</returns>
+        [HttpPost("{id}/complete-all-items")]
+        public ActionResult StartCompleteAllItemsTask(long id)
+        {
+            BackgroundJob.Enqueue(() => _todoItemsBl.CompleteAllItems(id));
+            return Accepted(new { Message = "Task to complete all items has been started." });
         }
 
 

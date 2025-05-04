@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TodoApi.DataAccess.Interfaces;
 using TodoApi.Dtos;
+using TodoApi.Hubs;
 using TodoApi.Models;
 
 namespace TodoApi.DataAccess.Classes
@@ -103,6 +105,5 @@ namespace TodoApi.DataAccess.Classes
 
             return todoList;
         }
-
     }
 }

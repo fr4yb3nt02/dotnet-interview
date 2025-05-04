@@ -7,6 +7,7 @@ using TodoApi.Middlewares;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using TodoApi.TestData;
+using TodoApi.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 builder
@@ -26,6 +27,9 @@ builder.Services.AddScoped<ITodoListsBL, TodoListsBL>();
 builder.Services.AddScoped<ITodoItemsBL, TodoItemsBL>();
 builder.Services.AddScoped<ExceptionMiddleware>();
 
+//Agrego SignalR
+builder.Services.AddSignalR();
+
 //Para tener Swagger (documentacion)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -41,6 +45,30 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+builder.Services.AddHangfire(config =>
+{
+    config.UseMemoryStorage();
+});
+
+builder.Services.AddHangfireServer();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+    options.AddPolicy("AllowSpecificOrigins", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -49,15 +77,23 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<TodoContext>();
     await SeedDatabase.SeedAsync(context);
 }
 
+app.MapHub<ProgressHub>("/progressHub").RequireCors("AllowSpecificOrigins");
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
+
+app.UseHangfireDashboard();
+
+//app.UseCors("AllowAll");
+app.UseCors("AllowSpecificOrigins");
 
 app.Run();

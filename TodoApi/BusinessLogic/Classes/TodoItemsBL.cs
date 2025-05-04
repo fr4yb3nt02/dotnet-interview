@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.SignalR;
 using TodoApi.BusinessLogic.Interfaces;
 using TodoApi.DataAccess.Interfaces;
 using TodoApi.Dtos;
+using TodoApi.Hubs;
 using TodoApi.Models;
 
 namespace TodoApi.BusinessLogic.Classes
@@ -8,10 +10,12 @@ namespace TodoApi.BusinessLogic.Classes
     public class TodoItemsBL : ITodoItemsBL
     {
         private readonly ITodoItemsDA _todoItemsDa;
+        private readonly IHubContext<ProgressHub> _hubContext;
 
-        public TodoItemsBL(ITodoItemsDA todoItemsDa)
+        public TodoItemsBL(ITodoItemsDA todoItemsDa, IHubContext<ProgressHub> hubContext)
         {
             _todoItemsDa = todoItemsDa;
+            _hubContext = hubContext;
         }
 
         public async Task<IList<TodoItem>> GetTodoItems(long todoListId)
@@ -37,6 +41,29 @@ namespace TodoApi.BusinessLogic.Classes
         public async Task CompleteTodoItem(long todoListId, long id)
         {
             await _todoItemsDa.CompleteTodoItem(todoListId, id);
+        }
+
+        public async Task CompleteAllItems(long todoListId)
+        {
+            var todoItems = await _todoItemsDa.GetTodoItems(todoListId);
+            var totalitems = todoItems.Count;
+            var completedItems = 0;
+
+            foreach (var item in todoItems)
+            {
+                if (!item.IsCompleted)
+                    await _todoItemsDa.CompleteTodoItem(todoListId, item.Id);
+                completedItems++;
+
+                await _hubContext.Clients.All.SendAsync("UpdateProgress", new
+                {
+                    TodoListId = todoListId,
+                    Progress = (completedItems * 100) / totalitems
+                });
+            }
+
+            //simulo una demora xD
+            await Task.Delay(200);
         }
     }
 }

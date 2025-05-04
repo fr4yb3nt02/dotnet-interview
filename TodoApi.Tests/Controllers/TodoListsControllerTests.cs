@@ -11,12 +11,14 @@ namespace TodoApi.Tests.Controllers;
 public class TodoListsControllerTests
 {
     private readonly Mock<ITodoListsBL> _todoListsBL = new Mock<ITodoListsBL>();
+    private readonly Mock<ITodoItemsBL> _todoItemsBL = new Mock<ITodoItemsBL>();
     private readonly TodoListsController _controller;
 
     public TodoListsControllerTests()
     {
         _todoListsBL = new Mock<ITodoListsBL>();
-        _controller = new TodoListsController(_todoListsBL.Object);
+        _todoItemsBL = new Mock<ITodoItemsBL>();
+        _controller = new TodoListsController(_todoListsBL.Object, _todoItemsBL.Object);
     }
 
     private void SetupMocks()
